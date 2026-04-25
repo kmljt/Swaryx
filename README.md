@@ -1,36 +1,128 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Swaryx 🎹
 
-## Getting Started
+**Swaryx** is a swar-driven digital instrument for Hindustani classical music.
 
-First, run the development server:
+Unlike traditional piano apps, Swaryx maps your keyboard to **Sa Re Ga Ma Pa Dha Ni**, allowing you to play in any tonic, thaat, or swar configuration instantly — just like a real riyaaz instrument.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun run dev
+---
+
+## ✨ Features
+
+* 🎼 **Dynamic Tonic (Sa) Selection**
+  Shift Sa to any note — the entire system adapts instantly.
+
+* 🎛️ **Swar Controls (Komal / Shuddha / Teevra)**
+  Fine-tune Re, Ga, Ma, Dha, Ni in real time.
+
+* 🔁 **Bidirectional Thaat Sync**
+
+  * Select a thaat → swars update
+  * Change swars → thaat auto-detects
+
+* 🧠 **Automatic Thaat Detection**
+  Recognizes Bilawal, Asavari, Kafi, Bhairav, etc.
+
+* 🎹 **Keyboard → Swar Mapping**
+  Keys map to swars (not fixed notes):
+  `q = Sa`, `w = Re`, `e = Ga`, ...
+
+* 🎧 **Realistic Piano Sound (SF2)**
+  Powered by WebAudioFont for expressive playback.
+
+* 🏷️ **Accurate Swar Labels**
+  Labels update dynamically based on tonic and swar configuration.
+
+* 🎨 **Modern UI + Visual Feedback**
+  Animated keys, glow effects, and color-coded swars.
+
+---
+
+## 🧠 Core Concept
+
+```text
+Key → Swar → Interval → Tonic → Note
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Swaryx is built around the idea that **music is relative, not absolute**.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Instead of playing fixed notes, you play **relationships (swars)** — just like in Indian classical music.
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+---
 
-## Learn More
+## 🎼 Example
 
-To learn more about Next.js, take a look at the following resources:
+### Tonic = C
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Key | Swar | Output |
+| --- | ---- | ------ |
+| q   | Sa   | C      |
+| w   | Re   | D / Db |
+| e   | Ga   | E / Eb |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+### Change to Tonic = D
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Key | Swar | Output |
+| --- | ---- | ------ |
+| q   | Sa   | D      |
+| w   | Re   | E / Eb |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+👉 Same keys, completely different scale — **musically correct behavior**
+
+---
+
+## 🚀 Getting Started
+
+```bash
+git clone https://github.com/<your-username>/swaryx.git
+cd swaryx
+npm install
+npm run dev
+```
+
+Open:
+
+```
+http://localhost:3000
+```
+
+---
+
+## 🧱 Tech Stack
+
+* **Next.js (App Router)**
+* **React**
+* **TypeScript**
+* **Web Audio API**
+* **WebAudioFont (SF2 playback)**
+* **CSS (custom UI styling)**
+
+---
+
+## 🎯 Vision
+
+Swaryx aims to evolve into a complete **digital riyaaz system**:
+
+* 🎵 Tanpura drone
+* 🎼 Raga presets
+* 🎤 Voice pitch detection
+* 🧠 Intelligent feedback system
+
+---
+
+## 📸 Demo
+
+> Add screenshots / GIFs here
+
+---
+
+## 🧑‍💻 Author
+
+Built with intent and curiosity.
+
+---
+
+## ⭐ If you like this
+
+Give it a star ⭐ — it helps a lot!
