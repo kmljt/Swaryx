@@ -1,9 +1,10 @@
 import './globals.css';
 import type { Metadata } from 'next';
-import { Inter, JetBrains_Mono } from 'next/font/google';
+import { Inter, Poppins, JetBrains_Mono } from 'next/font/google';
 
 const inter = Inter({ subsets: ['latin'] });
-const jetbrainsMono = JetBrains_Mono({ weight: '500', subsets: ['latin'] });
+const poppins = Poppins({ weight: ['600', '700'], subsets: ['latin'] });
+const jetbrainsMono = JetBrains_Mono({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Create Next App',
@@ -32,7 +33,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.className} ${jetbrainsMono.className}`}>{children}</body>
+      <body className={`${inter.className} ${poppins.className} ${jetbrainsMono.className}`}>{children}</body>
     </html>
   );
 }

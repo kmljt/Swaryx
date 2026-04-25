@@ -2,15 +2,28 @@ import { SwarConfig } from './swarConfig';
 
 export const THAAT_TO_CONFIG: Record<string, SwarConfig> = {
   bilawal: { re: 2, ga: 4, ma: 5, dha: 9, ni: 11 },
-  asavari: { re: 2, ga: 3, ma: 5, dha: 8, ni: 10 },
-  kafi: { re: 2, ga: 3, ma: 5, dha: 9, ni: 10 },
-  bhairav: { re: 1, ga: 4, ma: 5, dha: 8, ni: 11 },
-  bhairavi: { re: 1, ga: 3, ma: 5, dha: 8, ni: 10 },
   kalyan: { re: 2, ga: 4, ma: 6, dha: 9, ni: 11 },
-  todi: { re: 1, ga: 3, ma: 6, dha: 8, ni: 11 },
-  marwa: { re: 1, ga: 4, ma: 6, dha: 9, ni: 11 },
-  poorvi: { re: 1, ga: 4, ma: 6, dha: 8, ni: 11 },
   khamaj: { re: 2, ga: 4, ma: 5, dha: 9, ni: 10 },
+  kafi: { re: 2, ga: 3, ma: 5, dha: 9, ni: 10 },
+  asavari: { re: 2, ga: 3, ma: 5, dha: 8, ni: 10 },
+  bhairavi: { re: 1, ga: 3, ma: 5, dha: 8, ni: 10 },
+  bhairav: { re: 1, ga: 4, ma: 5, dha: 8, ni: 11 },
+  poorvi: { re: 1, ga: 4, ma: 6, dha: 8, ni: 11 },
+  marwa: { re: 1, ga: 4, ma: 6, dha: 9, ni: 11 },
+  todi: { re: 1, ga: 3, ma: 6, dha: 8, ni: 11 },
+};
+
+export const THAAT_TO_MELAKARTA: Record<string, string> = {
+  bilawal: 'dheerasankarabharanam',
+  kalyan: 'mechakalyani',
+  khamaj: 'harikambhoji',
+  kafi: 'kharaharapriya',
+  asavari: 'natabhairavi',
+  bhairavi: 'kanakangi',
+  bhairav: 'mayamalavagowla',
+  poorvi: 'kamavardhini',
+  marwa: 'mechakalyani',
+  todi: 'subhapantuvarali',
 };
 
 export function detectThaat(c: SwarConfig): string {

@@ -11,7 +11,8 @@ import {
 import { NOTES, noteIndex } from '@/app/utils/notes';
 import { initSF2, playSF2 } from '@/app/audio/sf2Engine';
 import { DEFAULT_SWAR_CONFIG, SwarConfig } from '@/app/utils/swarConfig';
-import { THAAT_TO_CONFIG, detectThaat } from '@/app/utils/thaatMap';
+import { THAAT_TO_CONFIG, detectThaat, THAAT_TO_MELAKARTA } from '@/app/utils/thaatMap';
+import { MELAKARTA_TO_CONFIG, detectMelakarta } from '@/app/utils/melakartaMap';
 
 const SWAR_SEQUENCE = [
   'Sa',
@@ -136,13 +137,28 @@ function getSwarLabel(note: string, tonic: string, config: SwarConfig) {
   return swarByInterval[diff] ?? '';
 }
 
+function getSwarClass(note: string, tonic: string, config: SwarConfig) {
+  const swarLabel = getSwarLabel(note, tonic, config);
+  if (swarLabel === 'Sa') return 'label-sa';
+  if (swarLabel === 'Re') return 'label-re';
+  if (swarLabel === 'Ga') return 'label-ga';
+  if (swarLabel === 'Ma') return 'label-ma';
+  if (swarLabel === 'Pa') return 'label-pa';
+  if (swarLabel === 'Dha') return 'label-dha';
+  if (swarLabel === 'Ni') return 'label-ni';
+  return 'label';
+}
+
 export default function Piano() {
   const pressed = useRef(new Set<string>());
   const activePointers = useRef(new Map<number, string>());
+  const melakartaListRef = useRef<HTMLDivElement>(null);
 
   const [tonic, setTonic] = useState('C');
   const [config, setConfig] = useState<SwarConfig>(DEFAULT_SWAR_CONFIG);
   const [thaat, setThaat] = useState('bilawal');
+  const [melakarta, setMelakarta] = useState('shankarabharanam');
+  const [melakartaIndex, setMelakartaIndex] = useState(0);
   const [active, setActive] = useState<Set<string>>(new Set());
   const [octaveOffset, setOctaveOffset] = useState(0);
   const [tonicIndex, setTonicIndex] = useState(NOTES.indexOf('C'));
@@ -191,6 +207,50 @@ export default function Piano() {
       })
     );
   }, [getInterval, tonic, octaveOffset]);
+
+  const getWesternMode = useMemo(() => {
+    // Map swar configurations to Western mode names
+    const modeMap: Record<string, string> = {
+      '2-4-5-9-11': 'Major/Ionian',
+      '2-3-5-9-10': 'Dorian',
+      '1-4-5-8-11': 'Phrygian',
+      '2-4-6-9-11': 'Lydian',
+      '2-4-5-9-10': 'Mixolydian',
+      '2-3-5-8-10': 'Aeolian/Minor',
+      '1-3-5-8-10': 'Locrian',
+      '1-4-5-8-10': 'Harmonic Minor',
+      '1-3-6-8-10': 'Melodic Minor',
+      '1-4-6-9-11': 'Lydian Dominant',
+      '2-3-6-9-10': 'Mixolydian b6',
+      '1-3-6-8-11': 'Locrian #2',
+      '1-4-6-8-11': 'Altered',
+      '2-4-6-9-10': 'Lydian Augmented',
+      '1-4-5-8-9': 'Dorian b2',
+      '2-3-5-8-11': 'Mixolydian b9',
+      '1-3-5-9-10': 'Aeolian b5',
+      '2-4-5-8-11': 'Ionian #5',
+      '1-4-6-8-10': 'Melodic Minor #4',
+      '2-3-6-8-11': 'Harmonic Minor #5',
+      '1-3-6-9-11': 'Super Locrian',
+      '2-4-6-8-11': 'Lydian b7',
+      '1-4-5-9-11': 'Mixolydian #4',
+      '2-3-5-9-11': 'Dorian #4',
+      '1-4-6-9-10': 'Lydian b6',
+      '2-3-6-9-11': 'Mixolydian b2',
+      '1-3-5-8-9': 'Locrian b6',
+      '2-4-5-8-10': 'Ionian b5',
+      '1-4-5-9-10': 'Dorian b5',
+      '2-3-6-8-10': 'Melodic Minor b6',
+      '1-4-6-8-9': 'Harmonic Minor b5',
+      '1-3-6-9-10': 'Super Locrian b7',
+      '2-4-6-8-10': 'Lydian b5',
+      '2-3-5-8-9': 'Aeolian b9',
+      '1-3-5-9-11': 'Locrian #6',
+    };
+
+    const key = `${config.re}-${config.ga}-${config.ma}-${config.dha}-${config.ni}`;
+    return modeMap[key] || 'Custom';
+  }, [config]);
 
   const keyToNote = useMemo(() => {
     const map = new Map<string, string>();
@@ -326,17 +386,63 @@ export default function Piano() {
   }, [keyToNote, playNote, stopNote, tonicKeyToNote, toggleSwar, shiftTonic, shiftOctave]);
 
   useEffect(() => {
-    setThaat(detectThaat(config));
+    const detectedThaat = detectThaat(config);
+    setThaat(detectedThaat);
+    
+    const detectedMelakarta = detectMelakarta(config);
+    setMelakarta(detectedMelakarta);
   }, [config]);
 
   useEffect(() => {
     setTonicIndex(NOTES.indexOf(tonic));
   }, [tonic]);
 
+  // Auto-scroll to selected melakarta
+  useEffect(() => {
+    if (melakartaListRef.current) {
+      // Small delay to ensure DOM is updated
+      const timeoutId = setTimeout(() => {
+        const selectedItem = melakartaListRef.current?.querySelector('.melakarta-item.selected');
+        if (selectedItem) {
+          selectedItem.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+            inline: 'nearest'
+          });
+        }
+      }, 50);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [melakarta]);
+
   const handleThaatChange = (t: string) => {
     if (!THAAT_TO_CONFIG[t]) return;
     setThaat(t);
     setConfig(THAAT_TO_CONFIG[t]);
+    // Also set the equivalent melakarta
+    const equivalentMelakarta = THAAT_TO_MELAKARTA[t];
+    if (equivalentMelakarta) {
+      setMelakarta(equivalentMelakarta);
+      // Set the slider to the correct position
+      const melakartaNames = Object.keys(MELAKARTA_TO_CONFIG);
+      const index = melakartaNames.indexOf(equivalentMelakarta);
+      if (index >= 0) {
+        setMelakartaIndex(index);
+      }
+    }
+  };
+
+  const handleMelakartaChange = (m: string) => {
+    if (!MELAKARTA_TO_CONFIG[m]) return;
+    setMelakarta(m);
+    setConfig(MELAKARTA_TO_CONFIG[m]);
+    // Set the slider to the correct position
+    const melakartaNames = Object.keys(MELAKARTA_TO_CONFIG);
+    const index = melakartaNames.indexOf(m);
+    if (index >= 0) {
+      setMelakartaIndex(index);
+    }
   };
 
   const handlePointerDown = async (
@@ -369,129 +475,282 @@ export default function Piano() {
   return (
     <div className="container">
       <div className="controls-panel">
-        <div className="top-controls">
-          <div className="control-card">
-            <div className="control-header">
-              <svg className="control-icon" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
-              </svg>
-              <div className="control-title">Tonic</div>
+        <div className="left-controls">
+          <div className="top-controls">
+            <div className="control-card">
+              <div className="control-header">
+                <svg className="control-icon" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                </svg>
+                <div className="control-title">Tonic</div>
+              </div>
+              <div className="toggle-group" role="group" aria-label="Select tonic">
+                {NOTES.map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    className={`toggle-btn ${tonic === n ? 'selected' : ''}`}
+                    onClick={() => setTonic(n)}
+                    aria-pressed={tonic === n}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="toggle-group" role="group" aria-label="Select tonic">
-              {NOTES.map((n) => (
+
+            <div className="control-card">
+              <div className="control-header">
+                <svg className="control-icon" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+                <div className="control-title">Thaat</div>
+              </div>
+              <div className="toggle-group" role="group" aria-label="Select thaat">
+                {Object.keys(THAAT_TO_CONFIG).map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    className={`toggle-btn ${thaat === t ? 'selected' : ''}`}
+                    onClick={() => handleThaatChange(t)}
+                    aria-pressed={thaat === t}
+                  >
+                    {t.charAt(0).toUpperCase() + t.slice(1)}
+                  </button>
+                ))}
                 <button
-                  key={n}
+                  key="custom"
                   type="button"
-                  className={`toggle-btn ${tonic === n ? 'selected' : ''}`}
-                  onClick={() => setTonic(n)}
-                  aria-pressed={tonic === n}
+                  className={`toggle-btn ${thaat === 'custom' ? 'selected' : ''}`}
+                  onClick={() => handleThaatChange('custom')}
+                  aria-pressed={thaat === 'custom'}
                 >
-                  {n}
+                  Custom
                 </button>
-              ))}
+              </div>
+            </div>
+
+            <div className="control-card">
+              <div className="control-header">
+                <svg className="control-icon" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M9 3v1H4v2h1v13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V6h1V4h-5V3H9zM7 6h6v13H7V6z"/>
+                </svg>
+                <div className="control-title">Melakarta</div>
+              </div>
+              <div className="melakarta-selector">
+                <div className="melakarta-list" ref={melakartaListRef}>
+                  {Object.entries(MELAKARTA_TO_CONFIG).map(([name, config], index) => (
+                    <button
+                      key={name}
+                      type="button"
+                      className={`melakarta-item ${melakarta === name ? 'selected' : ''}`}
+                      onClick={() => handleMelakartaChange(name)}
+                      title={name.charAt(0).toUpperCase() + name.slice(1)}
+                    >
+                      {name.charAt(0).toUpperCase() + name.slice(1)}
+                    </button>
+                  ))}
+                  <button
+                    key="custom"
+                    type="button"
+                    className={`melakarta-item ${melakarta === 'custom' ? 'selected' : ''}`}
+                    onClick={() => handleMelakartaChange('custom')}
+                    title="Custom"
+                  >
+                    Custom
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="control-card">
-            <div className="control-header">
-              <svg className="control-icon" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-              </svg>
-              <div className="control-title">Thaat</div>
-            </div>
-            <div className="toggle-group" role="group" aria-label="Select thaat">
-              {Object.keys(THAAT_TO_CONFIG).map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  className={`toggle-btn ${thaat === t ? 'selected' : ''}`}
-                  onClick={() => handleThaatChange(t)}
-                  aria-pressed={thaat === t}
-                >
-                  {t.charAt(0).toUpperCase() + t.slice(1)}
-                </button>
-              ))}
+          <div className="swar-modifier">
+            <div className="control-card swar-modifier-container">
+              <div className="control-header">
+                <svg className="control-icon" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/>
+                </svg>
+                <div className="control-title">Swar Modifier</div>
+              </div>
+              <div className="swar-modern-grid">
+                {/* Sa - Fixed */}
+                <div className="swar-modern-column fixed">
+                  <div className="swar-modern-header fixed">
+                    SA
+                  </div>
+                  <div className="swar-modern-options fixed">
+                    <div className="swar-modern-option fixed">
+                      Fixed
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Re - Variable */}
+                <div className="swar-modern-column">
+                  <div className="swar-modern-header">
+                    RE
+                  </div>
+                  <div className="swar-modern-options">
+                    {SWAR_CONTROLS[0].options.map((option) => {
+                      const isActive = config.re === option.value;
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          className={`swar-modern-option ${isActive ? 'active' : ''}`}
+                          onClick={() => toggleSwar('re')}
+                        >
+                          {option.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                
+                {/* Ga - Variable */}
+                <div className="swar-modern-column">
+                  <div className="swar-modern-header">
+                    GA
+                  </div>
+                  <div className="swar-modern-options">
+                    {SWAR_CONTROLS[1].options.map((option) => {
+                      const isActive = config.ga === option.value;
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          className={`swar-modern-option ${isActive ? 'active' : ''}`}
+                          onClick={() => toggleSwar('ga')}
+                        >
+                          {option.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                
+                {/* Ma - Variable */}
+                <div className="swar-modern-column">
+                  <div className="swar-modern-header">
+                    MA
+                  </div>
+                  <div className="swar-modern-options">
+                    {SWAR_CONTROLS[2].options.map((option) => {
+                      const isActive = config.ma === option.value;
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          className={`swar-modern-option ${isActive ? 'active' : ''}`}
+                          onClick={() => toggleSwar('ma')}
+                        >
+                          {option.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                
+                {/* Pa - Fixed */}
+                <div className="swar-modern-column fixed">
+                  <div className="swar-modern-header fixed">
+                    PA
+                  </div>
+                  <div className="swar-modern-options fixed">
+                    <div className="swar-modern-option fixed">
+                      Fixed
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Dha - Variable */}
+                <div className="swar-modern-column">
+                  <div className="swar-modern-header">
+                    DHA
+                  </div>
+                  <div className="swar-modern-options">
+                    {SWAR_CONTROLS[3].options.map((option) => {
+                      const isActive = config.dha === option.value;
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          className={`swar-modern-option ${isActive ? 'active' : ''}`}
+                          onClick={() => toggleSwar('dha')}
+                        >
+                          {option.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                
+                {/* Ni - Variable */}
+                <div className="swar-modern-column">
+                  <div className="swar-modern-header">
+                    NI
+                  </div>
+                  <div className="swar-modern-options">
+                    {SWAR_CONTROLS[4].options.map((option) => {
+                      const isActive = config.ni === option.value;
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          className={`swar-modern-option ${isActive ? 'active' : ''}`}
+                          onClick={() => toggleSwar('ni')}
+                        >
+                          {option.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="control-card swar-modifier">
-          <div className="control-header">
-            <svg className="control-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M3 17V7h2v10H3zm4 0V7h2v10H7zm4 0V7h2v10h-2zm4 0V7h2v10h-2z"/>
-            </svg>
-            <div className="control-title">Swar Modifier</div>
-          </div>
-          <div className="swar-grid">
-            {SWAR_SELECTOR_ITEMS.map((item) => {
-              if (item.type === 'fixed') {
-                return (
-                  <div key={item.id} className="swar-block">
-                    <div className="swar-label">{item.label}</div>
-                    <div className="toggle-group tight" role="group" aria-label={`${item.label} fixed`}>
-                      <button
-                        type="button"
-                        className="toggle-btn selected locked"
-                        aria-pressed={true}
-                        disabled
-                      >
-                        {item.valueLabel}
-                      </button>
-                    </div>
-                  </div>
-                );
-              }
-
-              const control = SWAR_CONTROL_BY_KEY[item.key];
-              return (
-                <div key={item.id} className="swar-block">
-                  <div className="swar-label">{control.label}</div>
-                  <div
-                    className="toggle-group tight"
-                    role="group"
-                    aria-label={`Select ${control.label}`}
-                  >
-                    {control.options.map((option) => (
-                      <button
-                        key={option.value}
-                        type="button"
-                        className={`toggle-btn ${config[control.key] === option.value ? 'selected' : ''}`}
-                        onClick={() =>
-                          setConfig((prev) => ({
-                            ...prev,
-                            [control.key]: option.value as SwarConfig[typeof control.key],
-                          }))
-                        }
-                        aria-pressed={config[control.key] === option.value}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
+        <div className="info-card">
+          <div className="info-grid">
+            <div className="info-item">
+              <div className="info-label">Tonic</div>
+              <div className="info-value">{tonic}</div>
+            </div>
+            <div className="info-item">
+              <div className="info-label">Hindustani</div>
+              <div className="info-value">{thaat.charAt(0).toUpperCase() + thaat.slice(1)}</div>
+            </div>
+            <div className="info-item">
+              <div className="info-label">Carnatic</div>
+              <div className="info-value">{melakarta.charAt(0).toUpperCase() + melakarta.slice(1)}</div>
+            </div>
+            <div className="info-item">
+              <div className="info-label">Western</div>
+              <div className="info-value">{getWesternMode}</div>
+            </div>
+            <div className="info-item">
+              <div className="info-label">Octave</div>
+              <div className="info-value">{octaveOffset >= 0 ? '+' : ''}{octaveOffset}</div>
+            </div>
           </div>
         </div>
       </div>
 
       <div className="piano-dock">
         <div className="hint">
-          <div className="hint-section">
-            <span className="hint-label">Play:</span>
-            <kbd className="hint-key">Q/A</kbd> rows
-          </div>
-          <div className="hint-section">
-            <span className="hint-label">Tonic:</span>
-            <kbd className="hint-key">1-7</kbd> keys
-          </div>
-          <div className="hint-section">
-            <span className="hint-label">Swar:</span>
-            <kbd className="hint-key">Z/X/C/V/B</kbd>
-          </div>
-          <div className="hint-section">
-            <span className="hint-label">Shift:</span>
-            <kbd className="hint-key">N/M</kbd> tonic, <kbd className="hint-key">,/.</kbd> octave
+          <div className="hint-straight">
+            <span className="hint-text">
+              <span className="hint-group">Play: <kbd className="hint-key">Q</kbd> and <kbd className="hint-key">A</kbd> rows</span>
+              <span className="hint-separator">•</span>
+              <span className="hint-group">Toggle Swars: <kbd className="hint-key">Z</kbd><kbd className="hint-key">X</kbd><kbd className="hint-key">C</kbd><kbd className="hint-key">V</kbd><kbd className="hint-key">B</kbd></span>
+              <span className="hint-separator">•</span>
+              <span className="hint-group">Select Tonic: <kbd className="hint-key">1</kbd> to <kbd className="hint-key">=</kbd> keys</span>
+              <span className="hint-separator">•</span>
+              <span className="hint-group">Shift Tonic: <kbd className="hint-key">N</kbd> or <kbd className="hint-key">M</kbd></span>
+              <span className="hint-separator">•</span>
+              <span className="hint-group">Shift Octave: <kbd className="hint-key">&lt;</kbd> or <kbd className="hint-key">&gt;</kbd></span>
+            </span>
           </div>
         </div>
         <div className="piano-shell">
@@ -514,7 +773,7 @@ export default function Piano() {
                   type="button"
                   aria-label={`${k.note} ${getSwarLabel(k.note, tonic, config)}`}
                 >
-                  <span className="label">{getSwarLabel(k.note, tonic, config)}</span>
+                  <span className={getSwarClass(k.note, tonic, config)}>{getSwarLabel(k.note, tonic, config)}</span>
                 </button>
               );
             } else {
@@ -532,7 +791,7 @@ export default function Piano() {
                   type="button"
                   aria-label={`${k.note} ${getSwarLabel(k.note, tonic, config)}`}
                 >
-                  <span className="label">{getSwarLabel(k.note, tonic, config)}</span>
+                  <span className={getSwarClass(k.note, tonic, config)}>{getSwarLabel(k.note, tonic, config)}</span>
                 </button>
               );
             }
