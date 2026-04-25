@@ -6,6 +6,9 @@ let inst: any;
 let started = false;
 
 export async function initSF2() {
+  // Check if we're on the client side
+  if (typeof window === 'undefined') return;
+
   if (started) return;
 
   ctx = new AudioContext();
@@ -25,6 +28,9 @@ export async function initSF2() {
 }
 
 export function playSF2(midi: number) {
+  // Check if we're on the client side and initialized
+  if (typeof window === 'undefined' || !player || !ctx || !inst) return;
+
   player.queueWaveTable(
     ctx,
     ctx.destination,
