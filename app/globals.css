@@ -1,0 +1,97 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
+  }
+}
+
+body {
+  background: #0f1115;
+  color: white;
+  font-family: sans-serif;
+}
+
+.container {
+  max-width: 900px;
+  margin: auto;
+  text-align: center;
+}
+
+.controls {
+  margin: 10px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.piano {
+  position: relative;
+  display: flex;
+  height: 220px;
+}
+
+.white {
+  width: 60px;
+  height: 220px;
+  background: white;
+  border: 1px solid black;
+  position: relative;
+}
+
+.black {
+  width: 40px;
+  height: 130px;
+  background: black;
+  position: absolute;
+}
+
+.active.white {
+  background: orange;
+}
+.active.black {
+  background: red;
+}
+
+.label {
+  position: absolute;
+  bottom: 5px;
+  width: 100%;
+  font-size: 12px;
+  text-align: center;
+  color: red;
+}
+
+select {
+  background-color: #1c1f26;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+
+/* improves dropdown list (works better on Windows) */
+select option {
+  background-color: #1c1f26;
+  color: #ffffff;
+}
+
+/* hover (not supported everywhere, but harmless) */
+select option:hover {
+  background-color: #2a2f3a;
+}
+
+select:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #3a86ff;
+}
