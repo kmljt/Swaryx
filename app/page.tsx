@@ -7,7 +7,7 @@ export default function Page() {
         <div className="title-logo">
           <div className="logo-circle"></div>
         </div>
-        <h1 className="title-mono">WARYX.</h1>
+        <h1 className="title-mono">SWARYX.</h1>
       </div>
       <Piano />
     </main>

@@ -9,10 +9,11 @@ import {
   type PointerEvent,
 } from 'react';
 import { NOTES, noteIndex } from '@/app/utils/notes';
-import { initSF2, playSF2 } from '@/app/audio/sf2Engine';
+import { initSF2 as initSoundEngine, playSF2 as playSoundNote, stopSF2 as stopSoundNote, testSF2Engine } from '@/app/audio/sf2Engine';
 import { DEFAULT_SWAR_CONFIG, SwarConfig } from '@/app/utils/swarConfig';
 import { THAAT_TO_CONFIG, detectThaat, THAAT_TO_MELAKARTA } from '@/app/utils/thaatMap';
 import { MELAKARTA_TO_CONFIG, detectMelakarta } from '@/app/utils/melakartaMap';
+import { MELAKARTA_TO_WESTERN } from '@/app/utils/melakartaToWestern';
 
 const SWAR_SEQUENCE = [
   'Sa',
@@ -27,11 +28,12 @@ const SWAR_SEQUENCE = [
   'Ga',
   'Ma',
   'Pa',
+  'Dha',
 ];
 
 const PLAY_KEYBOARD_LAYOUT = [
-  { saKey: 'q', baseOctave: 3, keys: ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[', ']'] },
-  { saKey: 'a', baseOctave: 4, keys: ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', "'", '\\'] },
+  { saKey: 'q', baseOctave: 3, keys: ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[', ']', '\\'] },
+  { saKey: 'a', baseOctave: 4, keys: ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', "'", 'enter'] },
 ] as const;
 const TONIC_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '='] as const;
 const SWAR_CONTROLS: Array<{
@@ -124,28 +126,47 @@ function getSwarLabel(note: string, tonic: string, config: SwarConfig) {
   let diff = noteIndex(name) - noteIndex(tonic);
   if (diff < 0) diff += 12;
 
+  // Helper function to get swar notation
+  const getSwarNotation = (swar: string, value: number) => {
+    switch (swar) {
+      case 're':
+        if (value === 1) return 'r'; // komal
+        if (value === 2) return 'R'; // shuddha
+        break;
+      case 'ga':
+        if (value === 3) return 'g'; // komal
+        if (value === 4) return 'G'; // shuddha
+        break;
+      case 'ma':
+        if (value === 5) return 'M'; // shuddha
+        if (value === 6) return 'M^'; // teevra
+        break;
+      case 'dha':
+        if (value === 8) return 'd'; // komal
+        if (value === 9) return 'D'; // shuddha
+        break;
+      case 'ni':
+        if (value === 10) return 'n'; // komal
+        if (value === 11) return 'N'; // shuddha
+        break;
+    }
+    return '';
+  };
+
   const swarByInterval: Record<number, string> = {
-    0: 'Sa',
-    [config.re]: 'Re',
-    [config.ga]: 'Ga',
-    [config.ma]: 'Ma',
-    7: 'Pa',
-    [config.dha]: 'Dha',
-    [config.ni]: 'Ni',
+    0: 'S',
+    [config.re]: getSwarNotation('re', config.re),
+    [config.ga]: getSwarNotation('ga', config.ga),
+    [config.ma]: getSwarNotation('ma', config.ma),
+    7: 'P',
+    [config.dha]: getSwarNotation('dha', config.dha),
+    [config.ni]: getSwarNotation('ni', config.ni),
   };
 
   return swarByInterval[diff] ?? '';
 }
 
 function getSwarClass(note: string, tonic: string, config: SwarConfig) {
-  const swarLabel = getSwarLabel(note, tonic, config);
-  if (swarLabel === 'Sa') return 'label-sa';
-  if (swarLabel === 'Re') return 'label-re';
-  if (swarLabel === 'Ga') return 'label-ga';
-  if (swarLabel === 'Ma') return 'label-ma';
-  if (swarLabel === 'Pa') return 'label-pa';
-  if (swarLabel === 'Dha') return 'label-dha';
-  if (swarLabel === 'Ni') return 'label-ni';
   return 'label';
 }
 
@@ -252,6 +273,14 @@ export default function Piano() {
     return modeMap[key] || 'Custom';
   }, [config]);
 
+  const melakartaName = useMemo(() => detectMelakarta(config), [config]);
+
+  const westernMapping = useMemo(() => {
+    const key = (melakartaName || '').toLowerCase();
+    const val = MELAKARTA_TO_WESTERN[key];
+    return val || getWesternMode;
+  }, [melakartaName, getWesternMode]);
+
   const keyToNote = useMemo(() => {
     const map = new Map<string, string>();
     keyboardBindings.forEach((binding) => {
@@ -279,8 +308,8 @@ export default function Piano() {
     if (!note) return;
 
     setActive((p) => new Set(p).add(note));
-    await initSF2();
-    playSF2(getMidiFromNote(note));
+    await initSoundEngine();
+    await playSoundNote(getMidiFromNote(note));
   }, []);
 
   const stopNote = useCallback((note: string | null) => {
@@ -291,6 +320,7 @@ export default function Piano() {
       n.delete(note);
       return n;
     });
+    stopSoundNote(getMidiFromNote(note));
   }, []);
 
   const toggleSwar = useCallback((swarKey: keyof SwarConfig) => {
@@ -451,7 +481,7 @@ export default function Piano() {
   ) => {
     e.preventDefault();
     activePointers.current.set(e.pointerId, note);
-    await playNote(note);
+    await playSoundNote(getMidiFromNote(note));
   };
 
   const handlePointerUp = (
@@ -727,7 +757,7 @@ export default function Piano() {
             </div>
             <div className="info-item">
               <div className="info-label">Western</div>
-              <div className="info-value">{getWesternMode}</div>
+              <div className="info-value">{westernMapping}</div>
             </div>
             <div className="info-item">
               <div className="info-label">Octave</div>
@@ -773,7 +803,7 @@ export default function Piano() {
                   type="button"
                   aria-label={`${k.note} ${getSwarLabel(k.note, tonic, config)}`}
                 >
-                  <span className={getSwarClass(k.note, tonic, config)}>{getSwarLabel(k.note, tonic, config)}</span>
+                  <span key={getSwarLabel(k.note, tonic, config)} className={getSwarClass(k.note, tonic, config)}>{getSwarLabel(k.note, tonic, config)}</span>
                 </button>
               );
             } else {
@@ -791,7 +821,7 @@ export default function Piano() {
                   type="button"
                   aria-label={`${k.note} ${getSwarLabel(k.note, tonic, config)}`}
                 >
-                  <span className={getSwarClass(k.note, tonic, config)}>{getSwarLabel(k.note, tonic, config)}</span>
+                  <span key={getSwarLabel(k.note, tonic, config)} className={getSwarClass(k.note, tonic, config)}>{getSwarLabel(k.note, tonic, config)}</span>
                 </button>
               );
             }
